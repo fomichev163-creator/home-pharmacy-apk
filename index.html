@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Домашняя аптечка</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; padding: 0; background: var(--bg); color: var(--text); padding-bottom: 90px; }
+    header {
+      background: var(--primary); color: #fff; padding: 16px;
+      position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    .btn-notify {
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+    }
+    .search-input {
+      width: 100%; margin-top: 12px; padding: 10px 12px; border-radius: 8px;
+      border: none; font-size: 0.95rem; outline: none;
+    }
+    .container { padding: 12px; max-width: 600px; margin: 0 auto; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .stat-box {
+      background: var(--card); padding: 10px 6px; border-radius: 10px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer; border: 2px solid transparent;
+    }
+    .stat-box.active { border-color: var(--primary); }
+    .stat-num { font-size: 1.35rem; font-weight: 700; display: block; }
+    .stat-label { font-size: 0.75rem; color: var(--muted); }
+    .settings-bar {
+      background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .settings-bar select {
+      padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;
+    }
+    .med-list { display: flex; flex-direction: column; gap: 10px; }
+    .med-card {
+      background: var(--card); border-radius: 10px; padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 5px solid var(--success);
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .med-card.expired { border-left-color: var(--danger); background: var(--danger-bg); }
+    .med-card.soon { border-left-color: var(--warning); background: var(--warning-bg); }
+    .med-info { flex: 1; }
+    .med-name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+    .med-meta { font-size: 0.85rem; color: var(--muted); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;
+      font-weight: 600; margin-top: 6px;
+    }
+    .badge.ok { background: var(--success-bg); color: var(--success); }
+    .badge.soon { background: #fef3c7; color: var(--warning); }
+    .badge.expired { background: #fee2e2; color: var(--danger); }
+    .actions { display: flex; gap: 6px; }
+    .btn-icon {
+      border: none; background: rgba(0,0,0,0.05); width: 34px; height: 34px;
+      border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+    }
+    .fab {
+      position: fixed; bottom: 20px; right: 20px; width: 58px; height: 58px;
+      border-radius: 50%; background: var(--primary); color: #fff; border: none;
+      font-size: 28px; box-shadow: 0 4px 12px rgba(37,99,235,0.4); cursor: pointer; z-index: 30;
+    }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; justify-content: center; align-items: center; z-index: 50; padding: 16px;
+    }
+    .modal {
+      background: var(--card); width: 100%; max-width: 400px; border-radius: 14px; padding: 20px;
+    }
+    .modal h2 { margin-top: 0; font-size: 1.15rem; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .form-group input {
+      width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem;
+    }
+    .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .btn { padding: 10px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+    .btn-cancel { background: #e2e8f0; color: var(--text); }
+    .btn-save { background: var(--primary); color: #fff; }
+    .reset-link { text-align: center; margin-top: 24px; font-size: 0.8rem; color: var(--muted); }
+    .reset-link button { background: none; border: none; color: var(--primary); text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>💊 Домашняя аптечка</h1>
+    <button class="btn-notify" onclick="checkNotifications(true)">🔔 Проверить</button>
+  </div>
+  <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию (например, Нурофен)..." oninput="render()">
+</header>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat-box active" id="tab-all" onclick="setFilter('all')">
+      <span class="stat-num" id="count-all">0</span>
+      <span class="stat-label">Все</span>
+    </div>
+    <div class="stat-box" id="tab-soon" onclick="setFilter('soon')">
+      <span class="stat-num" id="count-soon" style="color:var(--warning)">0</span>
+      <span class="stat-label">Скоро выйдет</span>
+    </div>
+    <div class="stat-box" id="tab-expired" onclick="setFilter('expired')">
+      <span class="stat-num" id="count-expired" style="color:var(--danger)">0</span>
+      <span class="stat-label">Просрочено</span>
+    </div>
+  </div>
+
+  <div class="settings-bar">
+    <span>Предупреждать за:</span>
+    <select id="warnDaysSelect" onchange="updateWarnDays()">
+      <option value="30">30 дней (1 мес.)</option>
+      <option value="60">60 дней (2 мес.)</option>
+      <option value="90">90 дней (3 мес.)</option>
+      <option value="180">180 дней (6 мес.)</option>
+    </select>
+  </div>
+
+  <div class="med-list" id="medList"></div>
+
+  <div class="reset-link">
+    <button onclick="resetToDefault()">Восстановить исходный список из тетради</button>
+  </div>
+</div>
+
+<button class="fab" onclick="openModal()">+</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Добавить лекарство</h2>
+    <input type="hidden" id="editId">
+    <div class="form-group">
+      <label>Название и дозировка</label>
+      <input type="text" id="medName" placeholder="Например: Нурофен 200 мг">
+    </div>
+    <div class="form-group">
+      <label>Годен до (месяц и год)</label>
+      <input type="month" id="medExp">
+    </div>
+    <div class="form-group">
+      <label>Количество / остаток</label>
+      <input type="text" id="medQty" placeholder="Например: 14 таблеток">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-save" onclick="saveMed()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const INITIAL_DATA = [
+  // Страница 1
+  { id: 1, name: "Регидрон", exp: "2027-02", qty: "упак." },
+  { id: 2, name: "Энтерол", exp: "2028-09", qty: "27 капсул" },
+  { id: 3, name: "Клиндамицин", exp: "2027-06", qty: "16 капсул" },
+  { id: 4, name: "Калия перманганат (марганцовка)", exp: "2029-01", qty: "порошок 15 гр." },
+  { id: 5, name: "Левомеколь", exp: "2028-06", qty: "мазь" },
+  { id: 6, name: "Галавит", exp: "2027-09", qty: "свечи 3 шт." },
+  { id: 7, name: "Транексам", exp: "2028-01", qty: "1 таблетка" },
+  { id: 8, name: "Но-шпа", exp: "2027-01", qty: "23 таблетки" },
+  { id: 9, name: "Натальсид", exp: "2027-01", qty: "5 свечей" },
+  { id: 10, name: "Эспумизан", exp: "2027-12", qty: "22 капсулы" },
+  { id: 11, name: "Моделакс-Н", exp: "2026-07", qty: "4 шт. (микроклизма)" },
+  { id: 12, name: "Перцовый пластырь (уп. 1)", exp: "2029-08", qty: "2 шт. (10×18)" },
+  { id: 13, name: "Перцовый пластырь (уп. 2)", exp: "2022-09", qty: "1 шт. (10×18)" },
+  { id: 14, name: "Полисорб", exp: "2028-01", qty: "много порошка" },
+  { id: 15, name: "Панкреатин 30 ед.", exp: "2028-08", qty: "14 таблеток" },
+  { id: 16, name: "Фолиевая кислота 400", exp: "2027-05", qty: "~47 шт." },
+  { id: 17, name: "Смекта", exp: "2028-07", qty: "10 пакетов" },
+  { id: 18, name: "Омепразол 20 мг (уп. 1)", exp: "2028-08", qty: "30 таблеток" },
+  { id: 19, name: "Омепразол 20 мг (уп. 2)", exp: "2028-08", qty: "29 таблеток" },
+  { id: 20, name: "Мидокалм 150 мг", exp: "2029-03", qty: "25 таблеток" },
+  // Страница 2
+  { id: 21, name: "Нурофен форте", exp: "2029-01", qty: "6 капсул" },
+  { id: 22, name: "Кетанов 10 мг", exp: "2027-11", qty: "7 таблеток" },
+  { id: 23, name: "Нурофен 100 мг/5 мл (фл. 1)", exp: "2027-05", qty: "немного начатый" },
+  { id: 24, name: "Нурофен 100 мг/5 мл (фл. 2)", exp: "2028-08", qty: "200 мл полный" },
+  { id: 25, name: "Фенистил", exp: "2027-09", qty: "почти полный" },
+  { id: 26, name: "Фарингазон 10 мг", exp: "2026-09", qty: "12 таблеток" },
+  { id: 27, name: "Ренгалин", exp: "2027-03", qty: "5 таблеток" },
+  { id: 28, name: "Фурацилин", exp: "2028-09", qty: "6 порошков" },
+  { id: 29, name: "Экспресс-тест на Covid-19 и грипп А и В", exp: "2027-10", qty: "1 тест" },
+  { id: 30, name: "Амоксиклав 125 мг + 31,25 мг/5 мл", exp: "2027-05", qty: "100 мл" },
+  { id: 31, name: "Амброксол 7,5 мг/мл", exp: "2027-07", qty: "100 мл" },
+  { id: 32, name: "Саб-симплекс", exp: "2027-01", qty: "30 мл" },
+  { id: 33, name: "Эспумизан-бэби", exp: "2027-04", qty: "30 мл" },
+  { id: 34, name: "Ибупрофен (сироп)", exp: "2028-03", qty: "100 мл" },
+  { id: 35, name: "Пирантел 250 мг/5 мл (фл. 1)", exp: "2027-03", qty: "15 мл" },
+  { id: 36, name: "Пирантел 250 мг/5 мл (фл. 2)", exp: "2028-09", qty: "15 мл" },
+  { id: 37, name: "Клотримазол 10 мг/г", exp: "2028-05", qty: "20 гр." },
+  { id: 38, name: "Натрия хлорид 9%", exp: "2030-05", qty: "250 мл" },
+  { id: 39, name: "Називин (от 1 г. до 6 л., 11,25 мкг/доза)", exp: "2028-09", qty: "1/3 флакона" },
+  { id: 40, name: "Ингалипт (фл. 1)", exp: "2029-08", qty: "1/3 флакона" },
+  { id: 41, name: "Ингалипт (фл. 2)", exp: "2027-10", qty: "1/3 флакона" },
+  // Страница 3
+  { id: 42, name: "Галазолин 0,1%", exp: "2027-06", qty: "менее 15 мл" },
+  { id: 43, name: "Аквалор бэби", exp: "2027-08", qty: "1/2 баллона" },
+  { id: 44, name: "Лазолван 7,5 мг/мл", exp: "2027-04", qty: "менее 100 мл" },
+  { id: 45, name: "Тантум верде", exp: "2029-04", qty: "менее 30 мл" },
+  { id: 46, name: "Доктор Мом мазь", exp: "2027-03", qty: "1/2 банки" },
+  { id: 47, name: "Цефекон Д 250 мг (от 3 до 12 лет)", exp: "2027-09", qty: "10 свечей" },
+  { id: 48, name: "Анальгин 500 мг", exp: "2029-02", qty: "20 таблеток" },
+  { id: 49, name: "Ибуклин юниор 100 мг + 125 мг", exp: "2028-02", qty: "12 таблеток" },
+  { id: 50, name: "Супрастин", exp: "2027-09", qty: "9 таблеток" },
+  { id: 51, name: "Парацетамол 500 мг", exp: "2028-07", qty: "18 таблеток" },
+  { id: 52, name: "Глицерин", exp: "2026-02", qty: "3 свечки" },
+  { id: 53, name: "Банеоцин", exp: "2025-12", qty: "10 гр." },
+  { id: 54, name: "Цефекон-Д 100 мг (от 3 мес. до 3 лет)", exp: "2027-11", qty: "6 свечей" },
+  { id: 55, name: "Ацетилсалициловая кислота 500 мг", exp: "2027-11", qty: "18 таблеток" },
+  { id: 56, name: "Геделикс", exp: "2028-04", qty: "100 мл" },
+  { id: 57, name: "Эуфиллин", exp: "2029-06", qty: "5 ампул" },
+  // Страница 4
+  { id: 58, name: "Цианокобаламин", exp: "2027-04", qty: "1 ампула" },
+  { id: 59, name: "Натрия хлорид 0,9%", exp: "2029-12", qty: "200 мл" },
+  { id: 60, name: "Трамадол 50 мг/мл (партия 1)", exp: "2027-03", qty: "1 шт." },
+  { id: 61, name: "Трамадол 50 мг/мл (партия 2)", exp: "2027-02", qty: "7 шт." },
+  { id: 62, name: "Цефазолин-Акос 1 гр.", exp: "2028-01", qty: "11 шт." }
+];
+
+let meds = JSON.parse(localStorage.getItem('my_pharmacy_meds')) || INITIAL_DATA;
+let warnDays = parseInt(localStorage.getItem('my_pharmacy_warn_days') || '90', 10);
+let currentFilter = 'all';
+
+document.getElementById('warnDaysSelect').value = warnDays;
+
+function getDaysLeft(expStr) {
+  const [year, month] = expStr.split('-').map(Number);
+  // Срок годности считается до последнего дня указанного месяца
+  const lastDay = new Date(year, month, 0, 23, 59, 59);
+  const now = new Date();
+  return Math.ceil((lastDay - now) / (1000 * 60 * 60 * 24));
+}
+
+function getStatus(days) {
+  if (days < 0) return 'expired';
+  if (days <= warnDays) return 'soon';
+  return 'ok';
+}
+
+function formatExp(expStr) {
+  const [year, month] = expStr.split('-');
+  return `${month}.${year}`;
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.stat-box').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + f).classList.add('active');
+  render();
+}
+
+function updateWarnDays() {
+  warnDays = parseInt(document.getElementById('warnDaysSelect').value, 10);
+  localStorage.setItem('my_pharmacy_warn_days', warnDays);
+  render();
+}
+
+function render() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const listEl = document.getElementById('medList');
+  listEl.innerHTML = '';
+
+  let countAll = meds.length, countSoon = 0, countExpired = 0;
+
+  const enriched = meds.map(m => {
+    const days = getDaysLeft(m.exp);
+    const status = getStatus(days);
+    if (status === 'soon') countSoon++;
+    if (status === 'expired') countExpired++;
+    return { ...m, days, status };
+  }).sort((a, b) => a.days - b.days);
+
+  document.getElementById('count-all').textContent = countAll;
+  document.getElementById('count-soon').textContent = countSoon;
+  document.getElementById('count-expired').textContent = countExpired;
+
+  const filtered = enriched.filter(m => {
+    if (currentFilter !== 'all' && m.status !== currentFilter) return false;
+    if (query && !m.name.toLowerCase().includes(query)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Ничего не найдено</div>';
+    return;
+  }
+
+  filtered.forEach(m => {
+    let badgeText = `Годен до ${formatExp(m.exp)} (${m.days} дн.)`;
+    if (m.status === 'expired') badgeText = `Просрочен (до ${formatExp(m.exp)})`;
+    else if (m.status === 'soon') badgeText = `Скоро истекает: до ${formatExp(m.exp)} (${m.days} дн.)`;
+
+    const card = document.createElement('div');
+    card.className = `med-card ${m.status}`;
+    card.innerHTML = `
+      <div class="med-info">
+        <div class="med-name">${m.name}</div>
+        <div class="med-meta">Остаток: <b>${m.qty || '—'}</b></div>
+        <span class="badge ${m.status}">${badgeText}</span>
+      </div>
+      <div class="actions">
+        <button class="btn-icon" onclick="openModal(${m.id})" title="Редактировать">✏️</button>
+        <button class="btn-icon" onclick="deleteMed(${m.id})" title="Удалить">🗑️</button>
+      </div>
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+function openModal(id = null) {
+  const overlay = document.getElementById('modalOverlay');
+  overlay.style.display = 'flex';
+  if (id) {
+    const m = meds.find(x => x.id === id);
+    document.getElementById('modalTitle').textContent = 'Редактировать лекарство';
+    document.getElementById('editId').value = m.id;
+    document.getElementById('medName').value = m.name;
+    document.getElementById('medExp').value = m.exp;
+    document.getElementById('medQty').value = m.qty;
+  } else {
+    document.getElementById('modalTitle').textContent = 'Добавить лекарство';
+    document.getElementById('editId').value = '';
+    document.getElementById('medName').value = '';
+    document.getElementById('medExp').value = '2028-01';
+    document.getElementById('medQty').value = '';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+
+function saveMed() {
+  const id = document.getElementById('editId').value;
+  const name = document.getElementById('medName').value.trim();
+  const exp = document.getElementById('medExp').value;
+  const qty = document.getElementById('medQty').value.trim();
+
+  if (!name || !exp) {
+    alert('Заполните название и срок годности!');
+    return;
+  }
+
+  if (id) {
+    const idx = meds.findIndex(x => x.id == id);
+    if (idx > -1) meds[idx] = { id: Number(id), name, exp, qty };
+  } else {
+    meds.push({ id: Date.now(), name, exp, qty });
+  }
+
+  localStorage.setItem('my_pharmacy_meds', JSON.stringify(meds));
+  closeModal();
+  render();
+}
+
+function deleteMed(id) {
+  const m = meds.find(x => x.id === id);
+  if (confirm(`Удалить «${m.name}» из аптечки?`)) {
+    meds = meds.filter(x => x.id !== id);
+    localStorage.setItem('my_pharmacy_meds', JSON.stringify(meds));
+    render();
+  }
+}
+
+function resetToDefault() {
+  if (confirm('Сбросить все изменения и вернуть исходный список из тетради?')) {
+    meds = [...INITIAL_DATA];
+    localStorage.setItem('my_pharmacy_meds', JSON.stringify(meds));
+    render();
+  }
+}
+
+function checkNotifications(manual = false) {
+  const expired = [];
+  const soon = [];
+  meds.forEach(m => {
+    const st = getStatus(getDaysLeft(m.exp));
+    if (st === 'expired') expired.push(m.name);
+    if (st === 'soon') soon.push(m.name);
+  });
+
+  const msg = `Просрочено: ${expired.length} шт.\nСкоро истекает срок: ${soon.length} шт.`;
+
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      new Notification("Ревизия домашней аптечки", { body: msg });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(p => {
+        if (p === "granted") new Notification("Ревизия домашней аптечки", { body: msg });
+      });
+    }
+  }
+  if (manual) {
+    alert(`📊 Сводка по аптечке:\n\n❌ Просрочено (${expired.length}):\n${expired.join(', ') || 'нет'}\n\n⚠️ Подходит срок (${soon.length}):\n${soon.join(', ') || 'нет'}`);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
